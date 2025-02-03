@@ -1,0 +1,14 @@
+/bower_components/
+/node_modules/
+/.pulp-cache/
+/deprecated/
+/player/dist/app.js
+/output/
+/.spago/
+/.psc*
+/.psa*
+/.vscode
+/.metals
+/.spec*
+sections.txt
+.purs-repl

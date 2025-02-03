@@ -1,0 +1,17 @@
+{
+  "private": true,
+  "scripts": {
+    "build": "spago build -p melody-plus-chords",
+    "buildall": "spago build",
+    "test": "spago test",
+    "player": "spago bundle --package player --outfile dist/app.js --bundle-type app --platform browser"
+  },
+  "devDependencies": {
+    "purescript": "^0.15.15",
+    "purescript-psa": "^0.5.1",
+    "spago": "^0.93.42"
+  },
+  "dependencies": {
+    "esbuild": "^0.24.2"
+  }
+}
