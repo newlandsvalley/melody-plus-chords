@@ -7,7 +7,7 @@ import Effect.Class (liftEffect)
 import Effect.Console (log)
 import Data.Either (Either(..))
 import Data.Abc.Parser (parse)
-import Data.Abc.Melody (PlayableAbc(..), defaultPlayableAbcProperties)
+import Data.Abc.MelodyPlusChords (PlayableAbc(..), defaultPlayableAbcProperties)
 import Data.Midi.Instrument (InstrumentName(..))
 import Halogen as H
 import Halogen.Aff as HA

@@ -10,6 +10,7 @@ The ```Melody``` type is defined in ```purescript-soundfonts```.  It consists si
   dependencies =
   [ "melody-plus-chords"
   , "abc-parser"
+  , "abc-melody"
   , "aff"
   , "console"
   , "effect"
@@ -40,7 +41,7 @@ module Main where
 import Audio.SoundFont (loadRemoteSoundFonts)
 import Audio.SoundFont.Melody (playMelody)
 import Data.Abc (AbcTune)
-import Data.Abc.Melody (PlayableAbc(..), defaultPlayableAbcProperties, toPlayableMelody)
+import Data.Abc.MelodyPlusChords (PlayableAbc(..), defaultPlayableAbcProperties, toPlayableMelody)
 import Data.Abc.Parser (parse)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))

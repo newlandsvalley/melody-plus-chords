@@ -1,5 +1,5 @@
--- | Conversion of an ABC tune to MIDI.
-module Data.Abc.Melody
+-- | Conversion of an ABC tune to MIDI, including chord symbols.
+module Data.Abc.MelodyPlusChords
   ( MidiPitch
   , PlayableAbc(..)
   , PlayableAbcProperties
@@ -10,7 +10,7 @@ module Data.Abc.Melody
 -- | Build a phrased, playable melody directly from a monophonic ABC Score
 -- | If a chord map is supplied, then also generate guitar chords alongside the melody
 
-import Data.Abc.Melody.Types
+import Data.Abc.MelodyPlusChords.Types
 
 import Audio.SoundFont.Melody (Melody)
 import Audio.SoundFont.Melody.Class (class Playable)
@@ -18,7 +18,7 @@ import Control.Monad.State (State, get, put, modify_, execState)
 import Data.Abc (AbcNote, AbcRest, AbcTune, Accidental(..), Bar, BarLine, BodyPart(..), SymbolDefinition, Grace, GraceableNote, Header(..), ModifiedKeySignature, Music(..), MusicLine, NoteDuration, RestOrNote, TempoSignature, TuneBody)
 import Data.Abc.Accidentals as Accidentals
 import Data.Abc.KeySignature (defaultKey, getKeySig)
-import Data.Abc.Melody.ChordSymbol (expandChordSymbols)
+import Data.Abc.MelodyPlusChords.ChordSymbol (expandChordSymbols)
 import Data.Abc.Melody.Intro (appendIntroSections)
 import Data.Abc.Melody.RepeatBuilder (buildRepeatedMelody)
 import Data.Abc.Melody.RepeatSections (initialRepeatState, indexBar, finalBar)

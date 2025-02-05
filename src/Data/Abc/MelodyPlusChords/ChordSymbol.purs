@@ -1,4 +1,4 @@
-module Data.Abc.Melody.ChordSymbol 
+module Data.Abc.MelodyPlusChords.ChordSymbol 
   ( expandChordSymbols) where
 
 import Data.Abc (Music(..), MusicLine, NoteDuration, SymbolDefinition)

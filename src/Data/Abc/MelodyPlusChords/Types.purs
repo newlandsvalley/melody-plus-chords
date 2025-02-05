@@ -1,4 +1,4 @@
-module Data.Abc.Melody.Types 
+module Data.Abc.MelodyPlusChords.Types 
   ( INote
   , IPhrase
   , IMelody
