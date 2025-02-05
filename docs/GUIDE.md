@@ -1,14 +1,14 @@
-# ABC Melody Guide
+# Melody Plus Chords Guide
 
 The ```Melody``` type is defined in ```purescript-soundfonts```.  It consists simply of an Array of ```MidiPhrase``` where each phrase is an Array of ```MidiNote```.  A phrase is a sequence of music which can played in the browser without interruption, which means that a suitable player widget can allow for other UI events at each phrase boundary. A ```MidiNote``` is simply the note pitch, duration and volume together with a channel number over which is is transmitted.  Each channel is associated with a different MIDI instrument.
 
-```abc-melody``` converts a parsed single-voice tune in ABC format to a ```Melody```. The simplest thing to be able to do is to play the entire melody without interruption using ```playMelody``` from ```Audio.SoundFonts.Melody```.  The following dependencies are needed:
+```melody-plus-chords``` converts a parsed single-voice tune in ABC format to a ```Melody```. When doing this, it considers the chord symbols as well as the melody line. The chord symbols will only be used if the appropriate guitar soundfonts are provided to the player. The simplest thing to be able to do is to play the entire melody without interruption using ```playMelody``` from ```Audio.SoundFonts.Melody```.  The following dependencies are needed:
 
 ## Dependencies
 
 ```purs
   dependencies =
-  [ "abc-melody"
+  [ "melody-plus-chords"
   , "abc-parser"
   , "aff"
   , "console"
@@ -106,7 +106,7 @@ abcString =
 
 ## Simple Player with Guitar Chords
 
-Notice that the sample ABC tune has chord symbols which were not heard in the example above.  ```abc-melody``` allows for these chords to be heard, played (in this instance) on a MIDI steel guitar. The melody itself plays on channel 0 and the chords on channel 1, which means that you have to load both the ```AcousticGrandPiano``` and  ```AcousticGuitarSteel``` soundfonts.
+Notice that the sample ABC tune has chord symbols which were not heard in the example above.  ```melody-plus-chords``` allows for these chords to be heard, played (in this instance) on a MIDI steel guitar. The melody itself plays on channel 0 and the chords on channel 1, which means that you have to load both the ```AcousticGrandPiano``` and  ```AcousticGuitarSteel``` soundfonts.
 
 Firstly, you must import from the ```rhythm-guitar``` library:
 
