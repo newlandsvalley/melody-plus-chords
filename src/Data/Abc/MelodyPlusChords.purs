@@ -13,11 +13,12 @@ module Data.Abc.MelodyPlusChords
 import Audio.SoundFont.Melody (Melody)
 import Audio.SoundFont.Melody.Class (class Playable)
 import Control.Monad.State (State, get, put, modify_, execState)
-import Data.Abc (AbcNote, AbcRest, AbcTune, Accidental(..), Bar, BarLine, BodyPart(..), SymbolDefinition, Grace, GraceableNote, Header(..), ModifiedKeySignature, Music(..), MusicLine, NoteDuration, RestOrNote, TempoSignature, TuneBody)
+import Data.Abc (AbcNote, AbcRest, AbcTune, Bar, BarLine, BodyPart(..), SymbolDefinition, Grace, GraceableNote, Header(..), ModifiedKeySignature, Music(..), MusicLine, NoteDuration, RestOrNote, TempoSignature, TuneBody)
 import Data.Abc.Accidentals as Accidentals
 import Data.Abc.KeySignature (defaultKey, getKeySig)
 import Data.Abc.MelodyPlusChords.ChordSymbol (expandChordSymbols)
-import Data.Abc.Melody.Types
+import Data.Abc.Melody.Types (INote, IPhrase, MidiBar)
+import Data.Abc.Melody.Utils
 import Data.Abc.Melody.Intro (appendIntroSections)
 import Data.Abc.Melody.RepeatBuilder (buildRepeatedMelody)
 import Data.Abc.Melody.RepeatSections (initialRepeatState, indexBar, finalBar)
@@ -26,19 +27,18 @@ import Data.Abc.Normaliser (normalise)
 import Data.Abc.Repeats.Types (RepeatState)
 import Data.Abc.Tempo (AbcTempo, getAbcTempo, setBpm, playedNoteDuration)
 import Data.Array as Array
-import Data.Array.NonEmpty (NonEmptyArray, fromFoldable1, reverse, singleton) as NEA
-import Data.Bifunctor (bimap)
+import Data.Array.NonEmpty (NonEmptyArray, fromFoldable1, reverse) as NEA
 import Data.Either (Either(..))
 import Data.Foldable (foldl, foldM)
 import Data.Int (toNumber) as Int
 import Data.List (List(..), (:))
 import Data.List.NonEmpty (NonEmptyList)
-import Data.List.NonEmpty (head, length, tail, toList) as NEL
+import Data.List.NonEmpty (head, toList) as NEL
 import Data.Map (empty, isEmpty)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Rational (Rational, fromInt, (%))
 import Data.Tuple (Tuple(..))
-import Prelude (Unit, bind, identity, map, not, pure, unit, ($), (&&), (*), (+), (-), (/), (<>), (==), (||), (>))
+import Prelude (Unit, bind, map, not, pure, unit, ($), (&&), (*), (+), (/), (<>), (==), (||), (>))
 import RhythmGuitar.Audio (lookupChordMidiPitches)
 import RhythmGuitar.Types (MidiChordConfig, MidiPitchChordMap, defaultMidiChordConfig)
 
@@ -71,16 +71,6 @@ instance playableAbc :: Playable PlayableAbc where
 -- | The pitch of a note expressed as a MIDI interval.
 type MidiPitch =
   Int
-
--- | the fraction  of the duration of a note that is 'stolen' by any
--- | preceding grace note that it has
-graceFraction :: Rational
-graceFraction =
-  (1 % 10)
-
--- the default volume
-defaultVolume :: Number
-defaultVolume = 0.5
 
 -- | Convert the ABC tune to a melody that is playable in a soundfonts player widget
 toPlayableMelody :: PlayableAbc -> Melody
@@ -621,40 +611,6 @@ handleAccompaniment chordSym = do
 
 -- utility functions
 
--- | if the incoming note has an explicit accidental (overriding the key signature)
--- | then add it to the accidentals in force in the current bar
-addNoteToBarAccidentals :: Accidentals.Accidentals -> AbcNote -> Accidentals.Accidentals
-addNoteToBarAccidentals accs abcNote =
-  case abcNote.accidental of
-    Implicit ->
-      accs
-    acc ->
-      Accidentals.add abcNote.pitchClass acc accs
-
--- | Generate an intermediate MIDI note destined for the Melody buffer
--- | as part of the melody proper
-iNote :: Number -> Number -> Int -> Boolean -> INote
-iNote offset duration pitch canPhrase =
-  { channel: 0 -- the MIDI channel
-  , pitches: NEA.singleton pitch -- the MIDI pitch number
-  , timeOffset: offset -- the time delay in seconds before the note is played
-  , duration: duration -- the duration of the note
-  , gain: defaultVolume -- the volume of the note
-  , canPhrase: canPhrase -- can we form a new phrase at this note?
-  }
-
--- | Generate an intermediate MIDI note destined for the Melody buffer
--- | which represents a chord (as part of the melody proper)
-iNotes :: Number -> Number -> NEA.NonEmptyArray Int -> Boolean -> INote
-iNotes offset duration pitches canPhrase =
-  { channel: 0 -- the MIDI channel
-  , pitches: pitches -- the MIDI pitch number
-  , timeOffset: offset -- the time delay in seconds before the note is played
-  , duration: duration -- the duration of the note
-  , gain: defaultVolume -- the volume of the note
-  , canPhrase: canPhrase -- can we form a new phrase at this note?
-  }
-
 -- | Generate an intermediate MIDI note destined for the Melody buffer
 -- | but here representing the accompaniment on a different channel
 iNoteAccompaniment :: MidiChordConfig -> Number -> NEA.NonEmptyArray Int -> INote
@@ -667,46 +623,6 @@ iNoteAccompaniment config duration pitches =
     , canPhrase: false -- can we form a new phrase at this note?
     }
 
--- | does the MIDI bar hold no notes (or any other MIDI messages)
-isBarEmpty :: MidiBar -> Boolean
-isBarEmpty mb =
-  Array.null mb.iPhrase
-
--- | Curtail the duration of the note by taking account of any grace notes
--- | that it may have
-curtailedGracedNote :: Maybe Grace -> AbcNote -> AbcNote
-curtailedGracedNote maybeGrace abcNote =
-  case maybeGrace of
-    Just grace ->
-      let
-        totalFraction = (fromInt $ NEL.length grace.notes) * graceFraction
-        duration = abcNote.duration - (abcNote.duration * totalFraction)
-      in
-        abcNote { duration = duration }
-    _ ->
-      abcNote
-
--- | Calculate an individual grace note with its duration dependent on a
--- | fraction of the note that it graces
-individualGraceNote :: AbcNote -> AbcNote -> AbcNote
-individualGraceNote abcNote graceNote =
-  graceNote { duration = graceFraction * abcNote.duration }
-
--- | add a grace note (which may be defined outside the tuplet) to the first
--- | note inside the tuplet (assuming it is a note and not a rest)
--- | n.b. The external grace takes precedence over any internal grace
-gracifyFirstNote :: Maybe Grace -> NonEmptyList RestOrNote -> List RestOrNote
-gracifyFirstNote maybeGrace restsOrNotes =
-  let
-    hd = NEL.head restsOrNotes
-    tl = NEL.tail restsOrNotes
-    f :: RestOrNote -> RestOrNote
-    f =
-      bimap identity (\gn -> gn { maybeGrace = maybeGrace })
-  in
-    Cons (f hd) tl
-
-
 -- | return true if two tied notes can be tied legitimately to the following note
 -- | the notes must have the same pitch and the following note my not be graced
 legitimateTie :: TState -> GraceableNote -> GraceableNote -> Boolean
@@ -716,26 +632,6 @@ legitimateTie tstate tiedNote nextNote =
   )
     &&
       isNothing nextNote.maybeGrace
-
--- | The very first bar has a default tempo as the only message
-initialBar :: MidiBar
-initialBar =
-  { number: 0
-  , endRepeats: 0
-  , startRepeats: 0
-  , iteration: Nothing
-  , iPhrase: []
-  }
-
--- | build a new bar from a bar number and an ABC bar
-buildNewBar :: Int -> BarLine -> MidiBar
-buildNewBar i barLine =
-  { number: i
-  , endRepeats: barLine.endRepeats
-  , startRepeats: barLine.startRepeats
-  , iteration: barLine.iteration
-  , iPhrase: []
-  }
 
 -- | this initial state is then threaded through the computation
 -- | but will be altered when ABC headers are encountered

@@ -63,7 +63,7 @@ workspace:
         - transformers
         - tuples
       git: https://github.com/newlandsvalley/purescript-abc-melody.git
-      ref: 5776b657079245be876616213febd4c7a7084483
+      ref: 843e59f1e7cdc0020bf3ffe184ab41e0ed0452ac
     rhythm-guitar:
       dependencies:
         - aff
