@@ -10,8 +10,6 @@ module Data.Abc.MelodyPlusChords
 -- | Build a phrased, playable melody directly from a monophonic ABC Score
 -- | If a chord map is supplied, then also generate guitar chords alongside the melody
 
-import Data.Abc.MelodyPlusChords.Types
-
 import Audio.SoundFont.Melody (Melody)
 import Audio.SoundFont.Melody.Class (class Playable)
 import Control.Monad.State (State, get, put, modify_, execState)
@@ -19,6 +17,7 @@ import Data.Abc (AbcNote, AbcRest, AbcTune, Accidental(..), Bar, BarLine, BodyPa
 import Data.Abc.Accidentals as Accidentals
 import Data.Abc.KeySignature (defaultKey, getKeySig)
 import Data.Abc.MelodyPlusChords.ChordSymbol (expandChordSymbols)
+import Data.Abc.Melody.Types
 import Data.Abc.Melody.Intro (appendIntroSections)
 import Data.Abc.Melody.RepeatBuilder (buildRepeatedMelody)
 import Data.Abc.Melody.RepeatSections (initialRepeatState, indexBar, finalBar)
